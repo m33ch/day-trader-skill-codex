@@ -1,6 +1,6 @@
 # The Day Trader skill
 
-11 Codex skills for day trading: scan thousands of charts, track breaking news, time every entry and exit, and replay every outcome before you risk a dollar.
+12 Codex skills for stocks and forex: scan thousands of charts, track breaking news, time every entry and exit, and replay every outcome before you risk a dollar.
 
 Free, MIT, no signup, no API key. The tools are plain Python that read free
 public data: Yahoo Finance charts, Nasdaq Trader's symbol lists, SEC EDGAR
@@ -31,7 +31,7 @@ cd day-trader-skill-codex
 codex
 ```
 
-The checked-in `.agents/skills/` directory links to the eleven skill folders
+The checked-in `.agents/skills/` directory links to the twelve skill folders
 at the repository root. Codex follows those links, so the skills are available
 in this checkout without copying or maintaining duplicate scripts.
 Use a checkout that preserves Git symlinks (for example Linux, macOS, or WSL).
@@ -44,7 +44,7 @@ mkdir -p "$HOME/.agents/skills"
 cp -R trader-* "$HOME/.agents/skills/"
 ```
 
-For another project only, copy the same eleven `trader-*` folders into that
+For another project only, copy the same twelve `trader-*` folders into that
 project's `.agents/skills/` instead. Copy the source folders, not the relative
 symlinks from this checkout. This also works on systems without symlink support.
 Codex detects skill changes automatically; restart it if the skills do not appear.
@@ -69,10 +69,11 @@ The tools need Python 3.8 or newer. Nothing to pip install. The SEC tools
 email in `trader/config.json` (`"sec_user_agent": "Your Name you@example.com"`)
 or in the `SEC_USER_AGENT` environment variable.
 
-## The eleven
+## The twelve
 
 | command | job | what it does |
 | --- | --- | --- |
+| `$trader-forex` | Forex workflow | Currency pairs, pip/lot sizing, account-currency risk, 24/5 calendar and configurable cTrader/TopFX, OANDA or manual drafts. |
 | `$trader-scanner` | Chart Scanner | Scans thousands of charts for setups: opening-range breakouts, flags, oversold bounces. |
 | `$trader-news` | News Monitor | Tracks breaking news on every stock you watch and flags what moves it. |
 | `$trader-entry` | Entry Timer | Watches a setup bar by bar and tells you the moment to get in. |
@@ -84,6 +85,76 @@ or in the `SEC_USER_AGENT` environment variable.
 | `$trader-alerts` | Price Alerts | Rings when a price, a stop or the opening bell hits. |
 | `$trader-analyst` | Earnings Analyst | Reads earnings reports and sums up what changed. |
 | `$trader-pelosi` | Pelosi Tracker | Reads Congress's stock-trade disclosures the minute they are filed. |
+
+## Forex, including cTrader / TopFX
+
+The new `$trader-forex` skill adds a separate forex engine. The nine applicable
+skills also accept `--market forex`; the default CLI path remains stocks.
+Stock earnings and Congress disclosures retain their equity-only scope.
+
+Open a trading project and initialize the isolated FX configuration:
+
+```bash
+python3 trader-forex/forex.py init
+python3 trader-forex/forex.py clock
+```
+
+Review `trader/forex/config.json`: account currency, equity, risk/fee amounts in
+that currency, allowed pairs, leverage/margin caps, UTC session, spread limits,
+and symbol-specific lot size / minimum / maximum / step. The example profile
+is **cTrader / TopFX / demo**; its numerical defaults are illustrative, not
+verified TopFX specifications. `broker.adapter` can be `ctrader`, `oanda`, or
+`manual`. Gold, crypto, indices and futures are outside the FX engine.
+
+Import current **broker bid/ask**, actual quote timestamps and the conversion
+pairs needed for the account currency. Research bars come from normalized
+broker exports or unofficial Yahoo currency charts; a research close is not an
+executable quote. The macro check uses an imported, verified calendar and
+blocks entries when it is missing/stale by default. See
+[forex data contracts and broker setup](trader-forex/DATA.md).
+
+Then use the pipeline (examples require those current inputs):
+
+```bash
+python3 trader-scanner/scan.py --market forex orb --pairs EUR/USD,USD/JPY
+python3 trader-news/news.py --market forex --pair EUR/USD
+python3 trader-entry/entry.py --market forex check --pair EUR/USD --side buy --write
+python3 trader-exit/exit.py --market forex plan --pair EUR/USD --side buy --stop-pips 20 --reward-risk 2 --write
+python3 trader-timemachine/timemachine.py --market forex run --write
+python3 trader-budget/size.py --market forex --write
+python3 trader-risk/check.py --market forex
+python3 trader-broker/ticket.py --market forex show
+```
+
+`--side sell` supports FX shorts. Sizing includes pip value, conservative
+account-currency conversion, slippage, round-trip commission, optional swap
+reserve, volume steps and existing paper-position margin. Risk also checks
+quotes, spreads, macro windows, rollover and cumulative daily reserved risk.
+The indicative week is Sunday 17:00 to Friday 17:00 New York with US DST;
+strategy times are explicitly UTC, and broker holidays may differ.
+
+The complete execution loop is a **local paper ledger**: exact risk PASS,
+user yes, `broker approve --reply "yes"`, then `broker paper-fill`. Use
+`broker flatten --position-id ID` to prepare a local exit, then repeat risk
+and consent. `alerts add --from-plan` / `alerts check` report stop, target and
+flat-by from the executable exit side, without closing positions.
+
+`broker export` prepares a **DRAFT_ONLY** integration message after approval.
+cTrader needs verified account-specific symbol IDs/volume metadata and emits
+its hundredths-of-unit volume and relative protection distances correctly.
+The adapters do not authenticate, send orders, or synchronize real accounts.
+Actual cTrader OAuth, broker fills and live margin require a separate connected
+integration. No live account is connected by installing these skills.
+
+Simulation reports historical-bootstrap price-path frequencies, not predicted
+returns or a validated strategy. It excludes bars after the plan's creation,
+requires twenty historical dates and caps the horizon at flat-by.
+
+To install/update the full pack from a checkout, preserving existing skills:
+
+```bash
+bash install-skills.sh
+```
 
 ## How to use it
 
@@ -229,6 +300,7 @@ installing the skills.
 ## Files
 
 ```
+trader-forex/       SKILL.md, forex.py, config.example.json, DATA.md
 trader-scanner/     SKILL.md, scan.py
 trader-news/        SKILL.md, news.py
 trader-entry/       SKILL.md, entry.py
@@ -240,7 +312,7 @@ trader-broker/      SKILL.md, ticket.py, config.example.toml
 trader-alerts/      SKILL.md, alerts.py, alerts.example.json
 trader-analyst/     SKILL.md, facts.py, metrics.example.json
 trader-pelosi/      SKILL.md, ptr.py
-.agents/skills/     Codex discovery links to the eleven source folders
+.agents/skills/     Codex discovery links to the twelve source folders
 tests/              unittest suite + offline fixtures
 ```
 

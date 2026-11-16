@@ -15,6 +15,10 @@ description: >-
 
 # trader-pelosi
 
+This skill covers equities. For currency-pair macroeconomic events use
+`$trader-forex news` or `$trader-news` in forex mode; do not treat SEC earnings
+or congressional equity disclosures as a forex calendar.
+
 Members of Congress have to report their trades, their spouse's and their
 dependent children's. The House Clerk posts every report as a PDF and lists
 them all in one index file per year. This skill reads that index, notices the

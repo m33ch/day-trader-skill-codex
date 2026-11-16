@@ -17,6 +17,25 @@ description: >-
 
 # trader-timemachine
 
+## Forex mode
+
+For currency trading, use `$trader-forex` and the forex engine:
+
+```bash
+python3 "${SKILL_DIR}/timemachine.py" --market forex run --write
+```
+
+Set `SKILL_DIR` to this skill's directory first. Install `trader-forex` beside
+this skill; `--market forex` delegates to that self-contained engine and uses
+`trader/forex/` state. Start with `forex.py init` from the forex skill, then
+review its configuration and import current broker bid/ask and macro data.
+Follow `trader-forex/SKILL.md` and `DATA.md` for pip/lot sizing, account-currency
+conversion and broker-specific contracts. This mode supports local demo fills
+and configurable cTrader/TopFX, OANDA or manual drafts. Broker drafts do not
+establish a connection or submit an order. The remaining instructions below
+describe the stock workflow.
+
+
 The Time Machine sits between the plan and the money. trader-exit has set
 the entry, the stop and the target. Before anything is sized or sent, this
 skill asks one question: if today plays out like the stock's own last 60

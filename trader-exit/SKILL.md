@@ -16,6 +16,25 @@ description: >-
 
 # trader-exit
 
+## Forex mode
+
+For currency trading, use `$trader-forex` and the forex engine:
+
+```bash
+python3 "${SKILL_DIR}/exit.py" --market forex plan --pair EUR/USD --side buy --stop-pips 20 --reward-risk 2 --write
+```
+
+Set `SKILL_DIR` to this skill's directory first. Install `trader-forex` beside
+this skill; `--market forex` delegates to that self-contained engine and uses
+`trader/forex/` state. Start with `forex.py init` from the forex skill, then
+review its configuration and import current broker bid/ask and macro data.
+Follow `trader-forex/SKILL.md` and `DATA.md` for pip/lot sizing, account-currency
+conversion and broker-specific contracts. This mode supports local demo fills
+and configurable cTrader/TopFX, OANDA or manual drafts. Broker drafts do not
+establish a connection or submit an order. The remaining instructions below
+describe the stock workflow.
+
+
 The Exit Planner decides how a trade ends before it starts. The stop is where
 the setup has failed. The target is where you take what you came for. Both
 are set BEFORE the entry, written down and handed on, so nobody has to decide
