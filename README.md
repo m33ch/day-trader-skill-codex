@@ -2,9 +2,12 @@
 
 12 Codex skills for stocks and forex: scan thousands of charts, track breaking news, time every entry and exit, and replay every outcome before you risk a dollar.
 
-Free, MIT, no signup, no API key. The tools are plain Python that read free
-public data: Yahoo Finance charts, Nasdaq Trader's symbol lists, SEC EDGAR
-and the House Clerk.
+MIT licensed, standard-library Python, with no pip dependencies. Stock
+research reads public Yahoo Finance charts, Nasdaq Trader symbol lists, SEC
+EDGAR and House Clerk disclosures. Forex research supports Yahoo currency
+charts and imported broker bars; planning also needs current broker bid/ask
+and a sourced macro calendar. Brokerage accounts and authenticated external
+integrations have their own setup requirements.
 
 One scans thousands of charts for setups. Another tracks breaking news on
 every stock you watch. One watches a setup bar by bar and tells you the moment
@@ -36,18 +39,35 @@ at the repository root. Codex follows those links, so the skills are available
 in this checkout without copying or maintaining duplicate scripts.
 Use a checkout that preserves Git symlinks (for example Linux, macOS, or WSL).
 
-To use them across projects, copy the actual source folders into your personal
-skill directory (review any existing folders with the same names first):
+To install all twelve skills across projects on your Mac, run this from the
+checkout in Terminal:
 
 ```bash
-mkdir -p "$HOME/.agents/skills"
-cp -R trader-* "$HOME/.agents/skills/"
+bash install-skills.sh
 ```
 
-For another project only, copy the same twelve `trader-*` folders into that
-project's `.agents/skills/` instead. Copy the source folders, not the relative
-symlinks from this checkout. This also works on systems without symlink support.
-Codex detects skill changes automatically; restart it if the skills do not appear.
+The installer copies the source folders into `$HOME/.agents/skills` and backs
+up any existing folders or symlinks under `$HOME/.agents/skill-backups/`.
+It does not overwrite your trading project's configuration or ledger. Install
+the complete pack together: forex entry points in the other nine tools need
+the sibling `trader-forex` folder. Copying source folders also works on systems
+without symlink support.
+
+For one project only, choose that project's absolute skill-directory path:
+
+```bash
+bash install-skills.sh "/absolute/path/to/project/.agents/skills"
+```
+
+To update a personal installation later, return to this checkout and run:
+
+```bash
+git pull --ff-only
+bash install-skills.sh
+```
+
+Installed copies do not automatically update when the checkout changes. Codex
+detects newly installed skills automatically; restart it if they do not appear.
 
 In Codex CLI or the IDE, type `$` to select a skill or use `/skills`. For example:
 
@@ -78,10 +98,10 @@ or in the `SEC_USER_AGENT` environment variable.
 | `$trader-news` | News Monitor | Tracks breaking news on every stock you watch and flags what moves it. |
 | `$trader-entry` | Entry Timer | Watches a setup bar by bar and tells you the moment to get in. |
 | `$trader-exit` | Exit Planner | Sets your stop and your target before you enter, so you know when to get out. |
-| `$trader-timemachine` | Time Machine | Replays every possible outcome of a trade before you risk a dollar: 10,000 simulated sessions plus every past time the setup fired. |
+| `$trader-timemachine` | Time Machine | Replays stock setups; forex mode bootstraps historical price paths with a configurable sample count. |
 | `$trader-risk` | Risk Manager | Checks every trade against your limits and stops anything over them. |
 | `$trader-budget` | Budget Manager | Sizes every position to your budget and your max loss per trade. |
-| `$trader-broker` | Order Executor | Sends approved orders to your broker, paper trading by default, never without your yes. |
+| `$trader-broker` | Order Executor | Stock tickets for a configured broker MCP; forex local paper fills and integration drafts, each requiring exact consent. |
 | `$trader-alerts` | Price Alerts | Rings when a price, a stop or the opening bell hits. |
 | `$trader-analyst` | Earnings Analyst | Reads earnings reports and sums up what changed. |
 | `$trader-pelosi` | Pelosi Tracker | Reads Congress's stock-trade disclosures the minute they are filed. |
@@ -92,7 +112,18 @@ The new `$trader-forex` skill adds a separate forex engine. The nine applicable
 skills also accept `--market forex`; the default CLI path remains stocks.
 Stock earnings and Congress disclosures retain their equity-only scope.
 
-Open a trading project and initialize the isolated FX configuration:
+After installing, open your trading project in Codex and start with:
+
+```text
+$trader-forex configure a demo project for cTrader / TopFX.
+Ask for my account currency, broker symbol specifications, costs and risk limits
+before saving them. Explain which quote and calendar inputs I need to import.
+```
+
+Codex resolves the installed scripts and keeps generated data in the current
+project. The shell examples below run from the repository checkout; if you
+run scripts directly from another project, use their absolute installed paths.
+Initialize the isolated FX configuration:
 
 ```bash
 python3 trader-forex/forex.py init
@@ -134,12 +165,25 @@ The indicative week is Sunday 17:00 to Friday 17:00 New York with US DST;
 strategy times are explicitly UTC, and broker holidays may differ.
 
 The complete execution loop is a **local paper ledger**: exact risk PASS,
-user yes, `broker approve --reply "yes"`, then `broker paper-fill`. Use
-`broker flatten --position-id ID` to prepare a local exit, then repeat risk
-and consent. `alerts add --from-plan` / `alerts check` report stop, target and
-flat-by from the executable exit side, without closing positions.
+user yes, approval, then a simulated fill. After the user actually replies
+yes for the displayed ticket, run:
 
-`broker export` prepares a **DRAFT_ONLY** integration message after approval.
+```bash
+python3 trader-forex/forex.py broker approve --reply "yes"
+python3 trader-forex/forex.py broker paper-fill
+python3 trader-forex/forex.py broker log
+python3 trader-forex/forex.py alerts add --from-plan
+python3 trader-forex/forex.py alerts check
+```
+
+Use `python3 trader-forex/forex.py broker flatten --position-id ID` with the
+local paper position ID from the log to prepare an exit, then repeat risk,
+ticket review and fresh consent before the closing paper fill. Alerts report
+stop, target and flat-by from the executable exit side; they never close a
+position. Each alert command runs one check and requires current quotes.
+
+`python3 trader-forex/forex.py broker export` prepares a **DRAFT_ONLY**
+integration message after approval.
 cTrader needs verified account-specific symbol IDs/volume metadata and emits
 its hundredths-of-unit volume and relative protection distances correctly.
 The adapters do not authenticate, send orders, or synchronize real accounts.
@@ -150,16 +194,25 @@ Simulation reports historical-bootstrap price-path frequencies, not predicted
 returns or a validated strategy. It excludes bars after the plan's creation,
 requires twenty historical dates and caps the horizon at flat-by.
 
-To install/update the full pack from a checkout, preserving existing skills:
+The broker settings and data are separate for each market:
 
-```bash
-bash install-skills.sh
-```
+| purpose | stocks | forex |
+| --- | --- | --- |
+| Configuration | `trader/config.json` | `trader/forex/config.json` |
+| Order proposal | `trader/orders.json` | `trader/forex/orders.json` |
+| Execution state | `trader/state/broker.json` | `trader/forex/state.json` (local demo only) |
+| Prices and macro data | `trader/prices.json`, stock news feeds | `trader/forex/quotes.json`, `trader/forex/calendar.json` |
+| Broker route | Configured stock MCP connection | cTrader, OANDA or manual draft exporter |
 
-## How to use it
+Switching an adapter name does not authenticate a broker. cTrader account and
+symbol IDs must come from the actual TopFX environment; contract defaults in
+this repo are examples. Forex risk clearance is restricted to demo mode.
 
-Everything lands in a `trader/` folder in your project, and each skill reads
-what the last one wrote:
+## Stock workflow
+
+The stock workflow writes directly under `trader/` in your project. Each skill
+reads what the last one wrote. Forex uses its separate subdirectory described
+above:
 
 ```
 scanner -> news -> entry -> exit -> timemachine -> budget -> risk -> broker   (one trade)
@@ -207,7 +260,7 @@ An example, the trade in the reel: Tesla, Monday October 19 2026, real data.
 9. **`$trader-alerts`** rings on the stop, the target and at 3:55 PM to
    flatten whatever is still open.
 
-## The tools
+## Stock CLI tools and verification
 
 All standard-library Python. The data tools read public endpoints and are
 polite about it.
@@ -237,7 +290,11 @@ python3 -m unittest discover -s tests -v
 The tests run offline, on fixtures cut from real data: TSLA's 5-minute bars
 for the 60 days to October 19 2026, the 10:15 AM opening-range scan, Yahoo's
 TSLA headlines that morning, the House Clerk's 2026 index, real PTR text and
-real XBRL facts. They reproduce every number in the example above.
+real XBRL facts. They reproduce every number in the stock example above.
+The forex tests use explicitly synthetic data to verify pip/lot arithmetic,
+account-currency conversions, long/short stop losses, costs, margin, session
+boundaries, invalidated approvals and broker draft units. These tests do not
+establish a live broker connection or validate a trading strategy.
 
 ## Fine print
 
@@ -251,19 +308,23 @@ an order, and only after `$trader-risk` passes that exact order and you type
 yes for it in the chat. Configure the broker MCP server with
 `default_tools_approval_mode = "prompt"` in Codex and require separate
 approval for the exact tool call. If the client cannot enforce that, prepare
-the ticket for manual submission. No options, margin, short selling or leverage
-unless you turn them on.
+the ticket for manual submission. Stock defaults disable options, margin and
+shorting. The separate forex demo configuration permits long/short signals
+within its configured leverage and margin caps; its adapters export drafts.
 
-**Paper first.** `"paper": true` is the default in `config.example.json`, and
-the MCP example explicitly selects the paper account. Merge
+**Paper first.** Both [stock defaults](trader-budget/config.example.json) and
+[forex defaults](trader-forex/config.example.json) set `"paper": true`. The
+Alpaca MCP example selects a paper account for the stock workflow. Merge
 [trader-broker/config.example.toml](trader-broker/config.example.toml) into your
 Codex config to connect Alpaca; do not overwrite your existing settings. Keys
 are forwarded from the Codex process environment, never entered in chat.
 Broker setup needs a current Codex client with MCP tool approval support;
-see [the broker skill](trader-broker/SKILL.md) for setup and IBKR limitations.
+see [the broker skill](trader-broker/SKILL.md) for stock setup and IBKR limitations.
+Forex paper fills stay local; they are not fills in a cTrader demo account.
 
-**The Time Machine is a simulation, not a prediction.** It is built from the
-stock's own last 60 days of 5-minute bars. The future can do things those 60
+**The Time Machine is a simulation, not a prediction.** The stock implementation
+uses the stock's own last 60 days of 5-minute bars. The forex implementation
+uses the separate bootstrap method described above. The future can do things those 60
 days never did: an earnings report, a halt, a headline. Treat its odds as a
 reality check, never as a promise.
 
@@ -276,7 +337,7 @@ official API: it can lag, change or rate-limit you. The scanner and the entry
 timer read 1-minute or 5-minute bars, not every tick. Check anything that
 matters against your broker before you act on it.
 
-**Day-trading rules.** FINRA removed the $25,000 pattern-day-trader minimum
+**US stock day-trading rules.** FINRA removed the $25,000 pattern-day-trader minimum
 on June 4, 2026 (Regulatory Notice 26-10), and brokers may phase the change
 in until October 20, 2027, so yours may still apply the old rule. If it does,
 set `"pdt_guard": true` and `$trader-risk` counts your day trades.
@@ -285,7 +346,7 @@ set `"pdt_guard": true` and `$trader-risk` counts your day trades.
 trades over $1,000 within 45 days (the STOCK Act). The Pelosi skill reads those
 public filings the minute they post.
 
-**Taxes.** Day-trading gains are short-term gains, and frequent trading makes
+**US stock taxes.** Day-trading gains are short-term gains, and frequent trading makes
 wash sales likely. Nothing here is tax advice.
 
 ## Migration from Claude Code
@@ -293,8 +354,9 @@ wash sales likely. Nothing here is tax advice.
 This fork replaces Claude plugin installation with Codex skill discovery,
 `$skill-name` invocation, explicit script path resolution, and a Codex TOML MCP
 example. It removes the Claude marketplace manifests and desktop JSON config.
-The eleven Python tools, shared `trader/` data formats, offline fixtures, and
-risk/consent checks are preserved. No brokerage account is connected by
+The original eleven stock tools, their shared `trader/` data formats, offline
+fixtures and risk/consent checks are preserved. A twelfth skill provides the
+separate forex engine and opt-in dispatch from the applicable stock tools. No brokerage account is connected by
 installing the skills.
 
 ## Files
@@ -313,6 +375,7 @@ trader-alerts/      SKILL.md, alerts.py, alerts.example.json
 trader-analyst/     SKILL.md, facts.py, metrics.example.json
 trader-pelosi/      SKILL.md, ptr.py
 .agents/skills/     Codex discovery links to the twelve source folders
+install-skills.sh  Full-pack installer with backups of existing skills
 tests/              unittest suite + offline fixtures
 ```
 
