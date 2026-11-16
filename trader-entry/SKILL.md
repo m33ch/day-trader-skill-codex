@@ -16,6 +16,25 @@ description: >-
 
 # trader-entry
 
+## Forex mode
+
+For currency trading, use `$trader-forex` and the forex engine:
+
+```bash
+python3 "${SKILL_DIR}/entry.py" --market forex check --pair EUR/USD --side buy --write
+```
+
+Set `SKILL_DIR` to this skill's directory first. Install `trader-forex` beside
+this skill; `--market forex` delegates to that self-contained engine and uses
+`trader/forex/` state. Start with `forex.py init` from the forex skill, then
+review its configuration and import current broker bid/ask and macro data.
+Follow `trader-forex/SKILL.md` and `DATA.md` for pip/lot sizing, account-currency
+conversion and broker-specific contracts. This mode supports local demo fills
+and configurable cTrader/TopFX, OANDA or manual drafts. Broker drafts do not
+establish a connection or submit an order. The remaining instructions below
+describe the stock workflow.
+
+
 The Entry Timer turns a setup into one moment: the bar that confirms it. It
 reads bars, 1-minute or 5-minute, and waits for each one to finish. A price
 that pokes above the high in the middle of a bar is not an entry. A bar that

@@ -1,0 +1,43 @@
+{
+  "market": "forex",
+  "paper": true,
+  "account_currency": "USD",
+  "equity": 5000,
+  "max_loss_per_trade": 50,
+  "max_daily_risk": 150,
+  "max_trades_per_day": 3,
+  "max_leverage": 5,
+  "max_margin_pct": 30,
+  "max_spread_pips": 3,
+  "slippage_pips": 0.5,
+  "round_trip_commission_per_lot": 7,
+  "allow_short": true,
+  "min_reward_risk": 1,
+  "max_quote_age_seconds": 120,
+  "session_start_utc": "08:00",
+  "opening_range_minutes": 15,
+  "flat_by_utc": "20:30",
+  "rollover_block_minutes": 15,
+  "allow_overnight": false,
+  "max_holding_nights": 1,
+  "swap_cost_per_lot_per_night": 0,
+  "require_calendar": true,
+  "max_calendar_age_hours": 24,
+  "news_blackout_minutes": 15,
+  "allowed_pairs": ["EUR/USD", "GBP/USD", "USD/JPY"],
+  "broker": {
+    "adapter": "ctrader",
+    "name": "TopFX",
+    "environment": "demo",
+    "account_id": null,
+    "symbols": {}
+  },
+  "instrument_defaults": {
+    "lot_size_units": 100000,
+    "min_units": 1000,
+    "max_units": 1000000,
+    "step_units": 1000,
+    "leverage": 30,
+    "min_stop_pips": 1
+  }
+}

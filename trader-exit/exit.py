@@ -692,6 +692,24 @@ def cmd_show(a):
 
 
 def main(argv=None):
+    # Opt-in FX uses the independently installed forex engine and isolated state.
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if any(arg == "--market" or arg.startswith("--market=") for arg in argv):
+        market_parser = argparse.ArgumentParser(add_help=False)
+        market_parser.add_argument("--market", choices=("stocks", "forex"), default="stocks")
+        market, argv = market_parser.parse_known_args(argv)
+        if market.market == "forex":
+            import importlib.util
+            engine = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
+                                  "trader-forex", "forex.py")
+            if not os.path.isfile(engine):
+                print("Install trader-forex beside this skill to use --market forex.", file=sys.stderr)
+                return 2
+            spec = importlib.util.spec_from_file_location("codex_forex", engine)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module.main(["exit"] + argv)
+
     ap = argparse.ArgumentParser(description="Exit Planner (trader-exit): the stop and target before the entry.")
     sub = ap.add_subparsers(dest="cmd")
     p = sub.add_parser("plan", help="set the stop and target")

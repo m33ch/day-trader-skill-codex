@@ -9,11 +9,11 @@ import unittest
 
 from _load import ROOT
 
-# v2, the day-trading pack: the eleven folders the reel's repo card shows
+# Stock pack plus the isolated forex engine
 SKILLS = ["trader-scanner", "trader-news", "trader-entry", "trader-exit", "trader-timemachine",
           "trader-risk", "trader-budget", "trader-broker", "trader-alerts", "trader-analyst",
-          "trader-pelosi"]
-ABOUT = ("11 Codex skills for day trading: scan thousands of charts, track breaking news, time every "
+          "trader-pelosi", "trader-forex"]
+ABOUT = ("12 Codex skills for stocks and forex: scan thousands of charts, track breaking news, time every "
          "entry and exit, and replay every outcome before you risk a dollar.")
 # skills on the way to an order carry the safety block
 ORDER_PATH = ["trader-scanner", "trader-entry", "trader-exit", "trader-timemachine", "trader-budget",
@@ -37,12 +37,12 @@ def every_text_file():
 
 
 class Repo(unittest.TestCase):
-    def test_eleven_skill_folders_at_the_root(self):
+    def test_all_skill_folders_at_the_root(self):
         found = sorted(d for d in os.listdir(ROOT)
                        if os.path.isfile(os.path.join(ROOT, d, "SKILL.md")))
         self.assertEqual(found, sorted(SKILLS))
 
-    def test_codex_discovery_links_to_all_eleven_source_folders(self):
+    def test_codex_discovery_links_to_all_source_folders(self):
         directory = os.path.join(ROOT, ".agents", "skills")
         self.assertEqual(sorted(os.listdir(directory)), sorted(SKILLS))
         for skill in SKILLS:
@@ -61,7 +61,7 @@ class Repo(unittest.TestCase):
                 dest = os.path.join(installed, skill)
                 shutil.copytree(os.path.join(ROOT, skill), dest,
                                 ignore=shutil.ignore_patterns("__pycache__"))
-                tool = next(f for f in os.listdir(dest) if f.endswith(".py"))
+                tool = "forex.py" if skill == "trader-forex" else next(f for f in os.listdir(dest) if f.endswith(".py"))
                 run = subprocess.run([sys.executable, os.path.join(dest, tool), "--help"],
                                      cwd=project, capture_output=True, text=True)
                 self.assertEqual(run.returncode, 0, run.stderr)

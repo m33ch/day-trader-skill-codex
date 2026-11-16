@@ -16,6 +16,25 @@ description: >-
 
 # trader-scanner
 
+## Forex mode
+
+For currency trading, use `$trader-forex` and the forex engine:
+
+```bash
+python3 "${SKILL_DIR}/scan.py" --market forex orb --pairs EUR/USD,GBP/USD
+```
+
+Set `SKILL_DIR` to this skill's directory first. Install `trader-forex` beside
+this skill; `--market forex` delegates to that self-contained engine and uses
+`trader/forex/` state. Start with `forex.py init` from the forex skill, then
+review its configuration and import current broker bid/ask and macro data.
+Follow `trader-forex/SKILL.md` and `DATA.md` for pip/lot sizing, account-currency
+conversion and broker-specific contracts. This mode supports local demo fills
+and configurable cTrader/TopFX, OANDA or manual drafts. Broker drafts do not
+establish a connection or submit an order. The remaining instructions below
+describe the stock workflow.
+
+
 The Chart Scanner is the first step of a day trade. It reads thousands of
 free charts and lists the ones that match a rule. That is all it does. A scan
 is a list of charts that match a rule, not a list of stocks to buy, and a

@@ -16,6 +16,25 @@ description: >-
 
 # trader-budget
 
+## Forex mode
+
+For currency trading, use `$trader-forex` and the forex engine:
+
+```bash
+python3 "${SKILL_DIR}/size.py" --market forex --write
+```
+
+Set `SKILL_DIR` to this skill's directory first. Install `trader-forex` beside
+this skill; `--market forex` delegates to that self-contained engine and uses
+`trader/forex/` state. Start with `forex.py init` from the forex skill, then
+review its configuration and import current broker bid/ask and macro data.
+Follow `trader-forex/SKILL.md` and `DATA.md` for pip/lot sizing, account-currency
+conversion and broker-specific contracts. This mode supports local demo fills
+and configurable cTrader/TopFX, OANDA or manual drafts. Broker drafts do not
+establish a connection or submit an order. The remaining instructions below
+describe the stock workflow.
+
+
 The Budget Manager turns a plan ("buy TSLA at 364.18, stop 358.32") into an
 exact order ("buy 8 shares"), inside rules the user sets once. The stop
 decides the size: the further away the stop, the fewer shares. It writes a

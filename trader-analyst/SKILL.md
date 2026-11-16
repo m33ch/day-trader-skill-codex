@@ -15,6 +15,10 @@ description: >-
 
 # trader-analyst
 
+This skill covers equities. For currency-pair macroeconomic events use
+`$trader-forex news` or `$trader-news` in forex mode; do not treat SEC earnings
+or congressional equity disclosures as a forex calendar.
+
 Earnings move stocks more than anything else on the calendar, and the press
 release is written to put the best number first. This skill reads the numbers
 the company actually filed with the SEC, lines them up quarter by quarter, and
